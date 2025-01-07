@@ -1,43 +1,30 @@
-#
-# Cross Platform Makefile
-# Compatible with MSYS2/MINGW, Ubuntu 14.04.1 and Mac OS X
-#
-# You will need SDL2 (http://www.libsdl.org):
-# Linux:
-#   apt-get install libsdl2-dev
-# Mac OS X:
-#   brew install sdl2
-# MSYS2:
-#   pacman -S mingw-w64-i686-SDL2
-#
 
 CXX = g++
-#CXX = clang++
+EXE = regman
 
-EXE = example_sdl2_opengl2
 IMGUI_DIR = lib/imgui
+SDL_DIR = /remote/us01home59/bello/bin/bin
 SOURCE_DIR = src
+BUILD_DIR = build
+
+# Create build directory if it doesn't exist
+$(shell mkdir -p $(BUILD_DIR))
 
 SOURCES = $(SOURCE_DIR)/main.cpp
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl2.cpp
-OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
-UNAME_S := $(shell uname -s)
+OBJS = $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
+UNAME_S = $(shell uname -s)
 
 CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends
 CXXFLAGS += -g -Wall -Wformat
 LIBS =
 
-##---------------------------------------------------------------------
-## BUILD FLAGS PER PLATFORM
-##---------------------------------------------------------------------
-
-ifeq ($(UNAME_S), Linux) #LINUX
-	ECHO_MESSAGE = "Linux"
-	LIBS += -lGL -ldl `sdl2-config --libs`
-
-	CXXFLAGS += `sdl2-config --cflags`
-	CFLAGS = $(CXXFLAGS)
+# Build flags per platform
+ifeq ($(UNAME_S), Linux)
+    ECHO_MESSAGE = "Linux"
+    LIBS += -lGL -ldl `$$(SDL_DIR)/sdl2-config --libs`
+    CXXFLAGS += `$$(SDL_DIR)/sdl2-config --cflags`
 endif
 
 ifeq ($(UNAME_S), Darwin) #APPLE
@@ -58,27 +45,21 @@ ifeq ($(OS), Windows_NT)
 	CFLAGS = $(CXXFLAGS)
 endif
 
-##---------------------------------------------------------------------
-## BUILD RULES
-##---------------------------------------------------------------------
-
-%.o:%.cpp
+# Build rules
+$(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.o:$(SOURCE_DIR)/%.cpp
+$(BUILD_DIR)/%.o: $(IMGUI_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.o:$(IMGUI_DIR)/%.cpp
+$(BUILD_DIR)/%.o: $(IMGUI_DIR)/backends/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
-%.o:$(IMGUI_DIR)/backends/%.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
-
-all: $(EXE)
+all: $(BUILD_DIR)/$(EXE)
 	@echo Build complete for $(ECHO_MESSAGE)
 
-$(EXE): $(OBJS)
+$(BUILD_DIR)/$(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
 clean:
-	rm -f $(EXE) $(OBJS)
+	rm -rf $(BUILD_DIR)
