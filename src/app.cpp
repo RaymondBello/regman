@@ -3,6 +3,7 @@
 App::App() {
     printf("Info: Starting %s\n", settings.name.c_str());
     window_bg_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    running = true;
 }
 
 App::~App() {
@@ -53,7 +54,7 @@ int App::initializeUI() {
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
     // Setup fonts
-    io.Fonts->AddFontFromFileTTF(settings.font.c_str(), settings.font_size);
+    // io.Fonts->AddFontFromFileTTF(settings.font.c_str(), settings.font_size);
     // Setup Theme
     ImGui::StyleColorsDark();
     // Setup backend

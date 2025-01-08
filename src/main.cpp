@@ -10,12 +10,11 @@
 int main(int, char**)
 {
     App app;
-    // // Init
+    // Init
     app.initializeWindow();
     app.initializeUI();
-    // // Running
+    // Running
     app.renderLoop();
-    // // Close 
+    // Close
     app.destroyUI();
-    
 }
