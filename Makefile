@@ -23,8 +23,10 @@ LIBS =
 # Build flags per platform
 ifeq ($(UNAME_S), Linux)
     ECHO_MESSAGE = "Linux"
-    LIBS += -lGL -ldl `$$(SDL_DIR)/sdl2-config --libs`
-    CXXFLAGS += `$$(SDL_DIR)/sdl2-config --cflags`
+	LIBS += -lGL -ldl `sdl2-config --libs`
+    CXXFLAGS += `sdl2-config --cflags`
+    # LIBS += -lGL -ldl `$$(SDL_DIR)/sdl2-config --libs`
+    # CXXFLAGS += `$$(SDL_DIR)/sdl2-config --cflags`
 endif
 
 ifeq ($(UNAME_S), Darwin) #APPLE
