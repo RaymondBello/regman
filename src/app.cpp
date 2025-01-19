@@ -26,12 +26,42 @@ int App::initializeWindow() {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+    // Decide GL+GLSL versions
+    #if defined(IMGUI_IMPL_OPENGL_ES2)
+    // GL ES 2.0 + GLSL 100 (WebGL 1.0)
+    glsl_version = "#version 100";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    #elif defined(IMGUI_IMPL_OPENGL_ES3)
+    // GL ES 3.0 + GLSL 300 es (WebGL 2.0)
+    glsl_version = "#version 300 es";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    #elif defined(__APPLE__)
+    // GL 3.2 Core + GLSL 150
+    glsl_version = "#version 150";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    #else
+    // GL 3.0 + GLSL 130
+    glsl_version = "#version 130";
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
+    #endif
+
 
     // Create window
     window_flags = (SDL_WindowFlags)(SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
-    window = SDL_CreateWindow(settings.name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, window_flags);
+    window = SDL_CreateWindow(settings.name.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1400, 800, window_flags);
     if (window == nullptr)
     {
         printf("Error: SDL_CreateWindow(): %s\n", SDL_GetError());
@@ -52,18 +82,26 @@ int App::initializeUI() {
 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
 
     // Setup fonts
     // io.Fonts->AddFontFromFileTTF(settings.font.c_str(), settings.font_size);
     // Setup Theme
     ImGui::StyleColorsDark();
+    // Setup Style
+    ImGuiStyle &style = ImGui::GetStyle();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        style.WindowRounding = 5.0f;
+        style.FrameRounding = 5.0f;
+        style.PopupRounding = 5.0f;
+        style.Colors[ImGuiCol_WindowBg].w = 0.0f;
+    }
     // Setup backend
     ImGui_ImplSDL2_InitForOpenGL(window, window_context);
-    ImGui_ImplOpenGL2_Init();
+    ImGui_ImplOpenGL3_Init(glsl_version);
 
     return 0;
-    
-    
 }
 
 void App::handleEvents() {
@@ -84,7 +122,7 @@ void App::handleEvents() {
 
 void App::beginRender() {
     // Start Render Frame
-    ImGui_ImplOpenGL2_NewFrame();
+    ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplSDL2_NewFrame();
     ImGui::NewFrame();
 
@@ -97,12 +135,20 @@ void App::endRender() {
     glClearColor(window_bg_color.x * window_bg_color.w, window_bg_color.y * window_bg_color.w, window_bg_color.z * window_bg_color.w, window_bg_color.w);
     glClear(GL_COLOR_BUFFER_BIT);
     // glUseProgram(0);
-    ImGui_ImplOpenGL2_RenderDrawData(ImGui::GetDrawData());
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        SDL_Window *backup_current_window = SDL_GL_GetCurrentWindow();
+        SDL_GLContext backup_current_context = SDL_GL_GetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        SDL_GL_MakeCurrent(backup_current_window, backup_current_context);
+    }
     SDL_GL_SwapWindow(window);
 }
 
 int App::destroyUI() {
-    ImGui_ImplOpenGL2_Shutdown();
+    ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
 
@@ -113,23 +159,47 @@ int App::destroyUI() {
     return 0;
 }
 
-std::string execute(const char *cmd)
-{
-    std::array<char, 128> buffer;
-    std::string result;
-    std::unique_ptr<FILE, decltype(&pclose)> pipe(popen(cmd, "r"), pclose);
-    if (!pipe)
-    {
-        throw std::runtime_error("popen() failed!");
-    }
-    while (fgets(buffer.data(), static_cast<int>(buffer.size()), pipe.get()) != nullptr)
-    {
-        result += buffer.data();
-    }
-    return result;
-}
 
 void App::drawUI() {
+
+    if (ImGui::BeginMainMenuBar())
+    {
+        if (ImGui::BeginMenu("File"))
+        {
+            if (ImGui::MenuItem("Create New Scene", "Ctrl+N")) {
+                printf("Create New Scene\n");
+            }
+            if (ImGui::MenuItem("Load Scene", "Ctrl+O")){
+                printf("Load Scene\n");
+            }
+            if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+                printf("Save Scene\n");
+            }
+            if (ImGui::MenuItem("Save Scene as..", "Ctrl+Shift+S")) {
+                printf("Save Scene as..\n");
+            }
+            ImGui::EndMenu();
+        }
+
+        if (ImGui::BeginMenu("Edit"))
+        {
+            ImGui::MenuItem("Undo", "CTRL+Z");
+            ImGui::MenuItem("Redo", "CTRL+Y");
+            ImGui::Separator();
+            ImGui::MenuItem("Cut", "CTRL+X");
+            ImGui::MenuItem("Copy", "CTRL+C");
+            ImGui::MenuItem("Paste", "CTRL+V");
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("View"))
+        {
+            ImGui::MenuItem("Terminal", "Ctrl+T", &settings.show_terminal_window);
+            ImGui::MenuItem("Demo Window", "Ctrl+D", &settings.show_demo_window);
+            ImGui::EndMenu();
+        }
+        ImGui::EndMainMenuBar();
+    }
+
     if (settings.show_demo_window) {
         ImGui::ShowDemoWindow(&settings.show_demo_window);
     }
@@ -140,23 +210,35 @@ void App::drawUI() {
         ImGui::ColorEdit3("BG Color", (float*)&window_bg_color);
         ImGui::Text("Application average %.3f ms/frame %.1f fps", 1000.0f / io.Framerate, io.Framerate);
 
-        static char buf1[256] = "ls -al"; ImGui::InputText("Command-line",buf1, 256);
+        static char buf1[256] = "ls -al"; 
+        ImGui::InputText("Command-line",buf1, 256);
         static std::string text;
 
         if (ImGui::Button("Send")) {
-            text = execute(buf1);
+            printf("Command: %s\n", buf1);
         }
-        ImGui::Text(text.c_str());
 
         ImGui::End();
     }
 }
     
 void App::renderLoop() {
-    while (running) {
+    #ifdef __EMSCRIPTEN__
+    ImGuiIO &io = ImGui::GetIO();
+    (void)io;
+    io.IniFilename = nullptr;
+    MainLoopForEmscriptenP = [&]() { do
+    #else 
+    while (running)
+    #endif
+    {
         handleEvents();
         beginRender();
         drawUI();
         endRender();
     }
+    #ifdef __EMSCRIPTEN__
+    while (0); };
+    emscripten_set_main_loop(MainLoopForEmscripten, 0, true);
+    #endif
 }

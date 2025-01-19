@@ -1,9 +1,5 @@
 #include <stdio.h>
-
-
 #include "app.h"
-
-
 
 
 // Main code

@@ -11,13 +11,20 @@
 #include <string>
 #include <stdio.h>
 
-#include <SDL.h>
-#include <SDL_opengl.h>
-
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
-#include "imgui_impl_opengl2.h"
+#include "imgui_impl_opengl3.h"
 
+#include <SDL.h>
+#if defined(IMGUI_IMPL_OPENGL_ES2)
+#include <SDL_opengles2.h>
+#else
+#include <SDL_opengl.h>
+#endif
+
+#ifdef __EMSCRIPTEN__
+#include "emscripten_mainloop_stub.h"
+#endif
 
 struct AppSettings {
     std::string name = "Regman";
@@ -29,6 +36,17 @@ struct AppSettings {
     bool show_terminal_window = true;
 };
 
+struct BuildConfig {
+    std::string name;
+    std::string command;
+};
+
+struct RunConfig {
+    std::string build_name;
+    std::string run_command;
+    int8_t num_runs;
+};
+
 class App {
  
     bool running;
@@ -38,6 +56,8 @@ class App {
     SDL_WindowFlags window_flags;
     SDL_GLContext window_context;
     SDL_Event window_event;
+
+    const char *glsl_version;
 
     ImVec4 window_bg_color;
 
