@@ -1,24 +1,36 @@
 
 CXX = g++
+
+BUILD_DIR = build
 EXE = regman
 
-IMGUI_DIR = lib/imgui
-SDL_DIR = /remote/us01home59/bello/bin/bin
 SOURCE_DIR = src
-BUILD_DIR = build
+IMGUI_DIR  = lib/imgui
+IMPLOT_DIR = lib/implot
+GLM_DIR    = lib/glm
+SDL_DIR    = /remote/us01home59/bello/bin/bin
 
 # Create build directory if it doesn't exist
 $(shell mkdir -p $(BUILD_DIR))
 
+# Source Files
 SOURCES = $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp
+# ImGui Files
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
+# ImPlot Files
+SOURCES += $(IMPLOT_DIR)/implot.cpp $(IMPLOT_DIR)/implot_items.cpp $(IMPLOT_DIR)/implot_demo.cpp
 OBJS = $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
 UNAME_S = $(shell uname -s)
 
-CXXFLAGS = -std=c++11 -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(IMGUI_DIR)/examples/libs/emscripten
+CXXFLAGS = -std=c++11 
 CXXFLAGS += -g -Wall -Wformat
-LIBS =
+CXXFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(IMGUI_DIR)/examples/libs/emscripten
+CXXFLAGS += -I$(IMPLOT_DIR)
+CXXFLAGS += -I$(GLM_DIR)
+CXXFLAGS += `pkg-config --cflags assimp`
+
+LIBS = `pkg-config --libs assimp`
 
 # Build flags per platform
 ifeq ($(UNAME_S), Linux)
@@ -57,12 +69,18 @@ $(BUILD_DIR)/%.o: $(IMGUI_DIR)/%.cpp
 $(BUILD_DIR)/%.o: $(IMGUI_DIR)/backends/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+$(BUILD_DIR)/%.o: $(IMPLOT_DIR)/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
 all: $(BUILD_DIR)/$(EXE)
 	@echo Build complete for $(ECHO_MESSAGE)
 
 run: all
 	./$(BUILD_DIR)/$(EXE)
 
+rerun: clean
+	make run -j8
+	
 $(BUILD_DIR)/$(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 

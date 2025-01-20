@@ -74,10 +74,12 @@ int App::initializeWindow() {
     return 0;
 }
 
+
 int App::initializeUI() {
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
+    ImPlot::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -100,6 +102,33 @@ int App::initializeUI() {
     // Setup backend
     ImGui_ImplSDL2_InitForOpenGL(window, window_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
+
+    printf("GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+    // Create Shaders
+    shaderProgram  = glCreateProgram();
+    GLuint vShader = createShader(vertexShaderSource, GL_VERTEX_SHADER);
+    GLuint fShader = createShader(fragmentShaderSource, GL_FRAGMENT_SHADER);
+
+    glAttachShader(shaderProgram, vShader);
+    glAttachShader(shaderProgram, fShader);
+    glLinkProgram(shaderProgram);
+    glUseProgram(shaderProgram);
+
+    float vertPositions[] = {
+        -0.5f, -0.5f,
+        0.5f, -0.5f,
+        0.f, 0.5f};
+    GLuint vertPosBuffer;
+    glGenBuffers(1, &vertPosBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, vertPosBuffer);
+    int amount = sizeof(vertPositions) / sizeof(vertPositions[0]);
+    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(GLfloat),
+                 vertPositions, GL_STATIC_DRAW);
+    GLint aPositionLocation = glGetAttribLocation(shaderProgram, "aPosition");
+    glVertexAttribPointer(aPositionLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
+    glEnableVertexAttribArray(aPositionLocation);
+
 
     return 0;
 }
@@ -131,10 +160,18 @@ void App::beginRender() {
 void App::endRender() {
     ImGui::Render();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
+
     glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+
     glClearColor(window_bg_color.x * window_bg_color.w, window_bg_color.y * window_bg_color.w, window_bg_color.z * window_bg_color.w, window_bg_color.w);
+    
     glClear(GL_COLOR_BUFFER_BIT);
-    // glUseProgram(0);
+
+    int colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+    glUniform3f(colorLocation, triangle_color.x, triangle_color.y, triangle_color.z);
+
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
@@ -150,6 +187,7 @@ void App::endRender() {
 int App::destroyUI() {
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
+    ImPlot::DestroyContext();
     ImGui::DestroyContext();
 
     SDL_GL_DeleteContext(window_context);
@@ -159,23 +197,25 @@ int App::destroyUI() {
     return 0;
 }
 
-
-void App::drawUI() {
-
+void App::createMenubar() {
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("File"))
         {
-            if (ImGui::MenuItem("Create New Scene", "Ctrl+N")) {
+            if (ImGui::MenuItem("Create New Scene", "Ctrl+N"))
+            {
                 printf("Create New Scene\n");
             }
-            if (ImGui::MenuItem("Load Scene", "Ctrl+O")){
+            if (ImGui::MenuItem("Load Scene", "Ctrl+O"))
+            {
                 printf("Load Scene\n");
             }
-            if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+            if (ImGui::MenuItem("Save Scene", "Ctrl+S"))
+            {
                 printf("Save Scene\n");
             }
-            if (ImGui::MenuItem("Save Scene as..", "Ctrl+Shift+S")) {
+            if (ImGui::MenuItem("Save Scene as..", "Ctrl+Shift+S"))
+            {
                 printf("Save Scene as..\n");
             }
             ImGui::EndMenu();
@@ -193,21 +233,34 @@ void App::drawUI() {
         }
         if (ImGui::BeginMenu("View"))
         {
-            ImGui::MenuItem("Terminal", "Ctrl+T", &settings.show_terminal_window);
-            ImGui::MenuItem("Demo Window", "Ctrl+D", &settings.show_demo_window);
+            ImGui::MenuItem("Terminal", NULL, &settings.show_terminal_window);
+            ImGui::MenuItem("Demo Window", NULL, &settings.show_demo_window);
+            ImGui::MenuItem("Plot Demo Window", NULL, &settings.show_plot_demo_window);
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }
+}
+
+void App::createHierarchy() {
+}
+
+void App::drawUI() {
+
+    createMenubar();
 
     if (settings.show_demo_window) {
         ImGui::ShowDemoWindow(&settings.show_demo_window);
+    }
+    if (settings.show_plot_demo_window) {
+        ImPlot::ShowDemoWindow(&settings.show_plot_demo_window);
     }
     if (settings.show_terminal_window) {
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         ImGui::Begin("Terminal");
         ImGui::Checkbox("Demo Window", &settings.show_demo_window);
         ImGui::ColorEdit3("BG Color", (float*)&window_bg_color);
+        ImGui::ColorEdit3("Tri Color", (float *)&triangle_color);
         ImGui::Text("Application average %.3f ms/frame %.1f fps", 1000.0f / io.Framerate, io.Framerate);
 
         static char buf1[256] = "ls -al"; 
@@ -241,4 +294,24 @@ void App::renderLoop() {
     while (0); };
     emscripten_set_main_loop(MainLoopForEmscripten, 0, true);
     #endif
+}
+
+// Render Functions
+GLuint App::createShader(const char *shaderSource, int shaderType){
+    GLuint shader = glCreateShader(shaderType);
+    glShaderSource(shader, 1, &shaderSource, NULL);
+    glCompileShader(shader);
+    GLint status;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (status == GL_FALSE)
+    {
+        GLint maxLength = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &maxLength);
+        std::vector<GLchar> errorLog(maxLength);
+        glGetShaderInfoLog(shader, maxLength, &maxLength, &errorLog[0]);
+        glDeleteShader(shader); // Don't leak the shader
+        printf("%s\n", &errorLog[0]);
+        printf("%s\n", shaderSource);
+    }
+    return shader;
 }

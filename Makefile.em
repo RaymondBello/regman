@@ -4,15 +4,22 @@ CXX = em++
 
 BUILD_DIR = build-em
 EXE = $(BUILD_DIR)/index.html
-IMGUI_DIR = lib/imgui
+
 SOURCE_DIR = src
+IMGUI_DIR  = lib/imgui
+IMPLOT_DIR = lib/implot
+GLM_DIR    = lib/glm
 
 # Create build directory if it doesn't exist
 $(shell mkdir -p $(BUILD_DIR))
 
+# Source Files
 SOURCES = $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp
+# ImGui Files
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
+# ImPlot Files
+SOURCES += $(IMPLOT_DIR)/implot.cpp $(IMPLOT_DIR)/implot_items.cpp $(IMPLOT_DIR)/implot_demo.cpp
 
 # OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
 OBJS = $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
@@ -55,8 +62,14 @@ endif
 ##---------------------------------------------------------------------
 
 CPPFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(IMGUI_DIR)/examples/libs/emscripten
+CXXFLAGS += -I$(IMPLOT_DIR)
+CXXFLAGS += -I$(GLM_DIR)
 #CPPFLAGS += -g
-CPPFLAGS += -Wno-unused-parameter -Wformat -Os $(EMS)
+## Ignore unused parameters
+#CPPFLAGS += -Wno-unused-parameter
+## Show all warnings
+CPPFLAGS += -Wall 
+CPPFLAGS += -Wformat -Os $(EMS)
 LDFLAGS += --shell-file $(IMGUI_DIR)/examples/libs/emscripten/shell_minimal.html
 LDFLAGS += $(EMS)
 
@@ -73,6 +86,9 @@ $(BUILD_DIR)/%.o:$(IMGUI_DIR)/%.cpp
 $(BUILD_DIR)/%.o:$(IMGUI_DIR)/backends/%.cpp
 	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
 
+$(BUILD_DIR)/%.o:$(IMPLOT_DIR)/%.cpp
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -c -o $@ $<
+
 all: $(EXE)
 	@echo Build complete for $(EXE)
 
@@ -81,6 +97,9 @@ $(BUILD_DIR):
 
 serve: all
 	python3 -m http.server -d $(BUILD_DIR)
+
+rerun: clean
+	make -f Makefile.em serve -j8
 
 $(EXE): $(OBJS) $(BUILD_DIR)
 	$(CXX) -o $@ $(OBJS) $(LDFLAGS)

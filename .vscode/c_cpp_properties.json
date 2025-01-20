@@ -4,6 +4,7 @@
             "name": "Mac",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/lib/glm/**",
                 "/usr/include/SDL2",
                 "/opt/homebrew/include/SDL2",
                 "/opt/homebrew/lib"
