@@ -5,9 +5,14 @@ BUILD_DIR = build
 EXE = regman
 
 SOURCE_DIR = src
+OPENGL_SRC = $(SOURCE_DIR)/OpenGL
+
+ASSETS_DIR = assets
+
 IMGUI_DIR  = lib/imgui
 IMPLOT_DIR = lib/implot
 GLM_DIR    = lib/glm
+ENTT_DIR   = lib/entt
 SDL_DIR    = /remote/us01home59/bello/bin/bin
 
 # Create build directory if it doesn't exist
@@ -15,6 +20,8 @@ $(shell mkdir -p $(BUILD_DIR))
 
 # Source Files
 SOURCES = $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp
+SOURCES += $(OPENGL_SRC)/opengl_buffer.cpp
+SOURCES += $(OPENGL_SRC)/opengl_shader.cpp
 # ImGui Files
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
@@ -23,12 +30,16 @@ SOURCES += $(IMPLOT_DIR)/implot.cpp $(IMPLOT_DIR)/implot_items.cpp $(IMPLOT_DIR)
 OBJS = $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
 UNAME_S = $(shell uname -s)
 
-CXXFLAGS = -std=c++11 
+CXXFLAGS = -std=c++17
 CXXFLAGS += -g -Wall -Wformat
 CXXFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(IMGUI_DIR)/examples/libs/emscripten
 CXXFLAGS += -I$(IMPLOT_DIR)
 CXXFLAGS += -I$(GLM_DIR)
+CXXFLAGS += `pkg-config --cflags entt`
 CXXFLAGS += `pkg-config --cflags assimp`
+
+# Source Includes
+CXXFLAGS += -I$(OPENGL_SRC)
 
 LIBS = `pkg-config --libs assimp`
 
@@ -63,6 +74,9 @@ endif
 $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
+$(BUILD_DIR)/%.o: $(OPENGL_SRC)/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
 $(BUILD_DIR)/%.o: $(IMGUI_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
@@ -79,7 +93,7 @@ run: all
 	./$(BUILD_DIR)/$(EXE)
 
 rerun: clean
-	make run -j8
+	make run 
 	
 $(BUILD_DIR)/$(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)

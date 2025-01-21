@@ -5,9 +5,11 @@
             "includePath": [
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/lib/glm/**",
+                "${workspaceFolder}/lib/entt/src/**",
                 "/usr/include/SDL2",
                 "/opt/homebrew/include/SDL2",
-                "/opt/homebrew/lib"
+                "/opt/homebrew/lib",
+                "${workspaceFolder}/src/OpenGL"
             ],
             "defines": [],
             "macFrameworkPath": [

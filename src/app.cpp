@@ -87,7 +87,7 @@ int App::initializeUI() {
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport / Platform Windows
 
     // Setup fonts
-    // io.Fonts->AddFontFromFileTTF(settings.font.c_str(), settings.font_size);
+    io.Fonts->AddFontFromFileTTF(settings.font.c_str(), settings.font_size);
     // Setup Theme
     ImGui::StyleColorsDark();
     // Setup Style
@@ -103,17 +103,11 @@ int App::initializeUI() {
     ImGui_ImplSDL2_InitForOpenGL(window, window_context);
     ImGui_ImplOpenGL3_Init(glsl_version);
 
-    printf("GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    printf("Info: GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
     // Create Shaders
-    shaderProgram  = glCreateProgram();
-    GLuint vShader = createShader(vertexShaderSource, GL_VERTEX_SHADER);
-    GLuint fShader = createShader(fragmentShaderSource, GL_FRAGMENT_SHADER);
-
-    glAttachShader(shaderProgram, vShader);
-    glAttachShader(shaderProgram, fShader);
-    glLinkProgram(shaderProgram);
-    glUseProgram(shaderProgram);
+    mShader = new OpenGLShader(vShdrSrc(default), fShdrSrc(default));
+    mShader->Bind();
 
     float vertPositions[] = {
         -0.5f, -0.5f,
@@ -125,10 +119,11 @@ int App::initializeUI() {
     int amount = sizeof(vertPositions) / sizeof(vertPositions[0]);
     glBufferData(GL_ARRAY_BUFFER, amount * sizeof(GLfloat),
                  vertPositions, GL_STATIC_DRAW);
-    GLint aPositionLocation = glGetAttribLocation(shaderProgram, "aPosition");
+    GLint aPositionLocation = glGetAttribLocation(mShader->m_RendererID, "aPosition");
     glVertexAttribPointer(aPositionLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
     glEnableVertexAttribArray(aPositionLocation);
 
+    
 
     return 0;
 }
@@ -167,7 +162,7 @@ void App::endRender() {
     
     glClear(GL_COLOR_BUFFER_BIT);
 
-    int colorLocation = glGetUniformLocation(shaderProgram, "ourColor");
+    int colorLocation = glGetUniformLocation(mShader->m_RendererID, "ourColor");
     glUniform3f(colorLocation, triangle_color.x, triangle_color.y, triangle_color.z);
 
     glDrawArrays(GL_TRIANGLES, 0, 3);

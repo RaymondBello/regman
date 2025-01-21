@@ -9,13 +9,6 @@
       "command": "make",
       "args": ["all", "-j8"],
       "problemMatcher": ["$gcc"]
-    },
-    {
-      "label": "run the exe",
-      "type": "shell",
-      "command": "${workspaceFolder}/build/regman",
-      "args": [""],
-      "problemMatcher": ["$gcc"]
     }
   ]
 }

@@ -12,15 +12,18 @@
 #include <string>
 #include <stdio.h>
 
+// ImGui
 #include "imgui.h"
-#include "imgui_internal.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
-
 #include "implot.h"
 
-// #include "glm.hpp"
+// GLM
 #include "glm/vec3.hpp" // glm::vec3
+
+// EnTT
+#include <entt/entt.hpp>
+#include <entt/entity/registry.hpp>
 
 #include <SDL.h>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -28,20 +31,22 @@
 #else
 #define GL_GLEXT_PROTOTYPES
 #include <SDL_opengl.h>
-// #include <SDL_opengl_glext.h>
 #endif
-
 
 #ifdef __EMSCRIPTEN__
 #include "emscripten_mainloop_stub.h"
 #endif
 
+// OpenGL
+#include "opengl_buffer.h"
+#include "opengl_shader.h"
 
 
 struct AppSettings {
     std::string name = "Regman";
-    std::string font = "/remote/us01home59/bello/.fonts/FiraCode-Regular.ttf";
-    float font_size  = 15.0f;
+    // std::string font = "/remote/us01home59/bello/.fonts/FiraCode-Regular.ttf";
+    std::string font = "assets/fonts/SFPro.ttf";
+    float font_size  = 17.0f;
 
     // Window settings
     bool show_demo_window = true;       // Imgui Demo
@@ -65,28 +70,15 @@ class App {
 
     ImVec4 window_bg_color;
     glm::vec3 triangle_color = glm::vec3(1.0f, 0.0f, 0.0f);
-    GLuint shaderProgram;
 
-    const char *vertexShaderSource =
-        "#version 100\n"
-        "attribute vec2 aPosition;\n"
-        "void main()\n"
-        "{\n"
-        "    gl_Position = vec4(aPosition, 0.0, 1.0);\n"
-        "}\n";
+    OpenGLShader *mShader = nullptr;
 
-    const char *fragmentShaderSource =
-        "#version 100\n"
-        "precision mediump float;"
-        "uniform vec3 ourColor;\n"
-        "void main()\n"
-        "{\n"
-        "    gl_FragColor = vec4(ourColor, 1.0);\n"
-        "}\n";
+    entt::registry mRegistry;
 
 public:
     App();
-    ~App(); // Initialization
+    ~App(); 
+    // Initialization
     int initializeWindow();
     int initializeUI();
     void handleEvents();

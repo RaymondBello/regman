@@ -8,7 +8,7 @@
       "program": "${workspaceFolder}/build/regman",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "${fileDirname}",
+      "cwd": "${workspaceFolder}",
       "environment": [],
       "externalConsole": false,
       "preLaunchTask": "run the makefile"
