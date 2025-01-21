@@ -93,7 +93,7 @@ run: all
 	./$(BUILD_DIR)/$(EXE)
 
 rerun: clean
-	make run 
+	make run -j8
 	
 $(BUILD_DIR)/$(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
