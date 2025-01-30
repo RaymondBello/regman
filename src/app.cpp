@@ -105,25 +105,10 @@ int App::initializeUI() {
 
     printf("Info: GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
 
-    // Create Shaders
-    mShader = new OpenGLShader(vShdrSrc(default), fShdrSrc(default));
-    mShader->Bind();
-
-    float vertPositions[] = {
-        -0.5f, -0.5f,
-        0.5f, -0.5f,
-        0.f, 0.5f};
-    GLuint vertPosBuffer;
-    glGenBuffers(1, &vertPosBuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertPosBuffer);
-    int amount = sizeof(vertPositions) / sizeof(vertPositions[0]);
-    glBufferData(GL_ARRAY_BUFFER, amount * sizeof(GLfloat),
-                 vertPositions, GL_STATIC_DRAW);
-    GLint aPositionLocation = glGetAttribLocation(mShader->m_RendererID, "aPosition");
-    glVertexAttribPointer(aPositionLocation, 2, GL_FLOAT, GL_FALSE, 0, 0);
-    glEnableVertexAttribArray(aPositionLocation);
-
-    
+    // Create a scene
+    m_SelectedEntityId = -1;
+    m_Scene = std::make_shared<Scene>();
+    m_Scene->BeginScene();
 
     return 0;
 }
@@ -162,10 +147,77 @@ void App::endRender() {
     
     glClear(GL_COLOR_BUFFER_BIT);
 
-    int colorLocation = glGetUniformLocation(mShader->m_RendererID, "ourColor");
-    glUniform3f(colorLocation, triangle_color.x, triangle_color.y, triangle_color.z);
+    ////////////// RENDER START //////////////
 
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    // int colorLocation = glGetUniformLocation(mShader->m_RendererID, "ourColor");
+    // glUniform3f(colorLocation, triangle_color.x, triangle_color.y, triangle_color.z);
+
+    auto cameraView = m_Scene->Reg().view<CameraComponent>();
+    for (auto entity : cameraView)
+    {
+        auto &camera = cameraView.get<CameraComponent>(entity);
+        if (camera.isPrimary)
+        {
+
+            for (auto &&[entity, mesh, transform] : m_Scene->Reg().view<MeshComponent, TransformComponent>().each())
+            {
+                if (mesh.shader.instance != nullptr)
+                {
+                    mesh.shader.instance->Bind();
+
+                    // Update Model Matrix
+                    transform.rotation.x += io.DeltaTime * 40.0f;
+                    transform.rotation.y += io.DeltaTime * 20.0f;
+
+                    // reset rotation to 0
+                    if (transform.rotation.x > 360.0f)
+                        transform.rotation.x = 0.0f;
+                    if (transform.rotation.y > 360.0f)
+                        transform.rotation.y = 0.0f;
+
+                    // Update Model Matrix
+                    mesh.shader.instance->UploadUniformMat4("uModelMatrix", transform.getMatrix());
+
+                    // Update View Matrix
+                    auto viewMatrix = glm::mat4(1.0f);
+                    // viewMatrix = glm::lookAt(m_position, m_position + m_lookAt, glm::vec3(0.0f, 1.0f, 0.0f));
+
+                    // camera.camera.updateCameraSize(displaySize.x, displaySize.y);
+                    // auto viewMatrix = camera.camera.getViewMatrix();
+
+                    mesh.shader.instance->UploadUniformMat4("uViewMatrix", viewMatrix);
+
+                    // Update Projection Matrix
+                    ImVec2 displaySize = ImVec2(io.DisplaySize.x * io.DisplayFramebufferScale.x,
+                                                io.DisplaySize.y * io.DisplayFramebufferScale.y);
+                    auto projectionMatrix = glm::perspective(glm::radians(90.0f), displaySize.x / displaySize.y, 0.1f, 100.0f);
+                    // auto projectionMatrix = glm::ortho(-3.0f, 3.0f, -2.0f, 2.0f, -1.0f, 1.0f);
+                    // projectionMatrix = glm::mat4(1.0f);
+                    mesh.shader.instance->UploadUniformMat4("uProjectionMatrix", projectionMatrix);
+
+                    // Bind the VAO for this mesh
+                    mesh.vao->Bind();
+
+                    // Setup Face culling and depth testing
+                    // glEnable(GL_DEPTH_TEST);
+
+                    // glEnable(GL_CULL_FACE);
+                    // glCullFace(GL_BACK);
+
+                    glDrawElements(GL_TRIANGLES, mesh.vao->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
+
+                    // glDisable(GL_CULL_FACE);
+                    // glDisable(GL_DEPTH_TEST);
+
+                    mesh.vao->Unbind();
+                }
+            }
+        }
+    }
+
+    // glDrawArrays(GL_TRIANGLES, 0, 3);
+
+    ////////////// RENDER END //////////////
 
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
@@ -231,13 +283,214 @@ void App::createMenubar() {
             ImGui::MenuItem("Terminal", NULL, &settings.show_terminal_window);
             ImGui::MenuItem("Demo Window", NULL, &settings.show_demo_window);
             ImGui::MenuItem("Plot Demo Window", NULL, &settings.show_plot_demo_window);
+            ImGui::MenuItem("Scene Graph", NULL, &settings.show_scene_graph_window);
+            ImGui::MenuItem("Inspector", NULL, &settings.show_inspector_window);
+
             ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }
 }
 
-void App::createHierarchy() {
+void App::createSceneGraph()
+{
+
+    static int selectionMask = (1 << 0);
+    int node_clicked = -1;
+
+    static uint32_t selectedEntity = -1;
+    uint32_t entityClicked = -1;
+
+    ImGui::Begin("Scene Graph");
+
+    if (ImGui::Button("Create Object", ImVec2(-1, 0)))
+    {
+        // Create popup menu with list of available components
+        ImGui::OpenPopup("create_object");
+    }
+
+    if (ImGui::BeginPopup("create_object"))
+    {
+        for (const auto &pair : ObjectTypeStringMap)
+        {
+            if (ImGui::Selectable(pair.second.c_str()))
+            {
+                m_Scene->AddObject(pair.first);
+            }
+        }
+        ImGui::EndPopup();
+    }
+
+    ImGui::Separator();
+
+    m_Scene->Reg().view<TagComponent>().each([&entityClicked](auto entity, auto &tag)
+                                             {
+        ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_SpanAvailWidth;
+        bool isSelected = (selectedEntity == (uint32_t)entity);
+        if (isSelected)
+        {
+            node_flags |= ImGuiTreeNodeFlags_Selected;
+        }
+        bool node_open = ImGui::TreeNodeEx((void *)(intptr_t)entity, node_flags, "%s", tag.tag.c_str());
+        if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+        {
+            entityClicked = (uint32_t)entity;
+        }
+        if (node_open)
+        {
+            ImGui::Text("Tag: %s", tag.tag.c_str());
+            ImGui::TreePop();
+        } });
+
+    if (entityClicked != -1)
+    {
+        // Update selection state
+        // (process outside of tree loop to avoid visual inconsistencies during the clicking frame)
+        if (ImGui::GetIO().KeyCtrl)
+        {
+            selectedEntity = -1; // CTRL+click to toggle
+            m_SelectedEntityId = -1;
+        }
+        else // if (!(selectionMask & (1 << node_clicked))) // Depending on selection behavior you want, may want to preserve selection when clicking on item that is part of the selection
+        {
+            selectedEntity = entityClicked; // Click to single-select
+            m_SelectedEntityId = selectedEntity;
+        }
+    }
+    if (ImGui::IsMouseClicked(0) && ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) && !ImGui::IsAnyItemHovered())
+    {
+        selectedEntity = -1;
+        m_SelectedEntityId = -1;
+    }
+    ImGui::End();
+}
+
+void App::createInspector()
+{
+
+    ImGui::Begin("Inspector");
+
+    // Get entity
+    if (m_SelectedEntityId != -1)
+    {
+        // Get entity
+        auto currentEntity = Entity((entt::entity)m_SelectedEntityId, m_Scene.get());
+
+        // Create popup menu with list of available components
+        bool addComponent = false;
+
+        if (ImGui::Button("Add component", ImVec2(-1, 0)))
+        {
+            // Create popup menu with list of available components
+            ImGui::OpenPopup("Add Component");
+        }
+
+        if (ImGui::BeginPopup("Add Component"))
+        {
+            if (ImGui::Selectable("Transform Component"))
+            {
+                // Check if component already exists
+                bool hasComponent = currentEntity.HasComponent<TransformComponent>();
+
+                if (!hasComponent)
+                    currentEntity.AddComponent<TransformComponent>();
+                else
+                {
+                    auto tag = currentEntity.GetComponent<TagComponent>().tag;
+                    printf("Error: #%0u (%s): Transform component already exists!", (uint32_t)currentEntity.ID(), tag.c_str());
+                }
+            }
+            if (ImGui::Selectable("Camera Component"))
+            {
+                // Check if component already exists
+                bool hasComponent = currentEntity.HasComponent<CameraComponent>();
+
+                if (!hasComponent)
+                    currentEntity.AddComponent<CameraComponent>();
+                else
+                {
+                    auto tag = currentEntity.GetComponent<TagComponent>().tag;
+                    printf("Error: #%0u (%s): Camera component already exists!", (uint32_t)currentEntity.ID(), tag.c_str());
+                }
+            }
+            ImGui::EndPopup();
+        }
+
+        ImGui::Separator();
+
+        if (m_Scene->Reg().any_of<TagComponent>((entt::entity)m_SelectedEntityId))
+        {
+            // Get tag
+            static bool allowEditing = true;
+
+            static std::string tag;
+            auto &tagComponent = m_Scene->Reg().get<TagComponent>((entt::entity)m_SelectedEntityId);
+            // tag = tagComponent.tag;
+
+            char buffer[256];
+            std::strncpy(buffer, tagComponent.tag.c_str(), sizeof(buffer));
+            buffer[sizeof(buffer) - 1] = '\0'; // Null-terminate
+
+            ImGui::Checkbox("##", &allowEditing);
+            ImGui::SameLine();
+
+            if (ImGui::InputText("Name", buffer, sizeof(buffer), allowEditing ? 0 : ImGuiInputTextFlags_ReadOnly))
+                tagComponent.tag = buffer;
+
+            ImGui::Separator();
+        }
+
+        if (m_Scene->Reg().any_of<TransformComponent>((entt::entity)m_SelectedEntityId))
+        {
+            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                ImGui::DragFloat3("Position", glm::value_ptr(m_Scene->Reg().get<TransformComponent>((entt::entity)m_SelectedEntityId).position), 0.1f);
+                ImGui::DragFloat3("Rotation", glm::value_ptr(m_Scene->Reg().get<TransformComponent>((entt::entity)m_SelectedEntityId).rotation), 1.0f);
+                ImGui::DragFloat3("Scale", glm::value_ptr(m_Scene->Reg().get<TransformComponent>((entt::entity)m_SelectedEntityId).scale), 0.1f);
+                ImGui::Separator();
+            }
+        }
+
+        if (m_Scene->Reg().any_of<CameraComponent>((entt::entity)m_SelectedEntityId))
+        {
+            if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
+            {
+                auto cameraEntity = Entity((entt::entity)m_SelectedEntityId, m_Scene.get());
+
+                ImGui::DragFloat3("Camera Position", glm::value_ptr(cameraEntity.GetComponent<CameraComponent>().camera.position), 0.1f);
+                ImGui::DragFloat3("Front Vector", glm::value_ptr(cameraEntity.GetComponent<CameraComponent>().camera.frontVector), 0.1f, -1.0f, 1.0f);
+                ImGui::DragFloat3("Up Vector", glm::value_ptr(cameraEntity.GetComponent<CameraComponent>().camera.upVector), 0.1f, -1.0f, 1.0f);
+                ImGui::DragFloat("Field of View", &cameraEntity.GetComponent<CameraComponent>().camera.fieldOfView, 1.0f, 45, 150.0f);
+                ImGui::DragFloat("Look Sensitivity", &cameraEntity.GetComponent<CameraComponent>().camera.lookSensitivity, 0.01f, 0.01f, 50.0f);
+                ImGui::DragFloat("Zoom Sensitivity", &cameraEntity.GetComponent<CameraComponent>().camera.zoomSensitivity, 0.01f, 0.01f, 20.0f);
+                ImGui::DragFloat("Move Sensitivity", &cameraEntity.GetComponent<CameraComponent>().camera.moveSensitivity, 1.0f, 1.0f, 100.0f);
+
+                ImGui::Checkbox("Primary Camera", &cameraEntity.GetComponent<CameraComponent>().isPrimary);
+                ImGui::Separator();
+            }
+        }
+    }
+    else
+    {
+        std::string noEntitySelected = "No entity selected";
+        std::string deselect = "CTRL+RClick to deselect";
+        // Center the text in the window
+        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(noEntitySelected.c_str()).x) / 2);
+        ImGui::Text("%s", noEntitySelected.c_str());
+        ImGui::SetCursorPosX((ImGui::GetWindowSize().x - ImGui::CalcTextSize(deselect.c_str()).x) / 2);
+        ImGui::Text("%s", deselect.c_str());
+
+        ImGui::Separator();
+        ImGui::Text("Camera");
+        // ImGui::DragFloat3("Look At", glm::value_ptr(m_lookAt), 0.01f);
+        // ImGui::DragFloat("Mouse Speed", &m_mouseSpeed, 0.01f, 0.1f, 1.0f);
+        // ImGui::DragFloat("Movement Speed", &m_moveSpeed, 0.01f, 0.1f, 50.0f);
+        // ImGui::DragFloat3("Position", glm::value_ptr(m_position), 0.1f);
+        // ImGui::DragFloat3("Rotation", glm::value_ptr(m_rotation), 1.0f);
+        // ImGui::DragFloat3("Scale", glm::value_ptr(m_scale), 0.1f);
+    }
+
+    ImGui::End();
 }
 
 void App::drawUI() {
@@ -267,6 +520,14 @@ void App::drawUI() {
         }
 
         ImGui::End();
+    }
+    if (settings.show_scene_graph_window)
+    {
+        createSceneGraph();
+    }
+    if (settings.show_inspector_window)
+    {
+        createInspector();
     }
 }
     

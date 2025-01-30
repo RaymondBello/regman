@@ -19,7 +19,9 @@
 #include "implot.h"
 
 // GLM
-#include "glm/vec3.hpp" // glm::vec3
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 // EnTT
 #include <entt/entt.hpp>
@@ -37,9 +39,9 @@
 #include "emscripten_mainloop_stub.h"
 #endif
 
-// OpenGL
-#include "opengl_buffer.h"
-#include "opengl_shader.h"
+#include "components.h"
+#include "scene.h"
+#include "entity.h"
 
 
 struct AppSettings {
@@ -49,9 +51,11 @@ struct AppSettings {
     float font_size  = 17.0f;
 
     // Window settings
-    bool show_demo_window = true;       // Imgui Demo
-    bool show_plot_demo_window = true;  // Implot Demo
-    bool show_terminal_window = true;
+    bool show_demo_window        = true;  // Imgui Demo
+    bool show_plot_demo_window   = true;  // Implot Demo
+    bool show_terminal_window    = true;
+    bool show_scene_graph_window = true;
+    bool show_inspector_window   = true;
 };
 
 
@@ -73,7 +77,10 @@ class App {
 
     OpenGLShader *mShader = nullptr;
 
-    entt::registry mRegistry;
+    // Scene
+    std::shared_ptr<Scene> m_Scene = nullptr;
+    // Entities
+    uint32_t m_SelectedEntityId;
 
 public:
     App();
@@ -90,7 +97,7 @@ public:
     // UI
     void drawUI();
     void createMenubar();
-    void createHierarchy();
+    void createSceneGraph();
     void createInspector();
     void createViewport();
     void createProfiler();

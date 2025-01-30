@@ -87,45 +87,34 @@ static GLenum ShaderDataTypeToOpenGLBaseType(ShaderDataType type)
     case ShaderDataType::None:
         return -1;
     }
-
     return 0;
 }
 
 OpenGLVertexArray::OpenGLVertexArray()
 {
-    #ifndef __EMSCRIPTEN__
     glGenVertexArrays(1, &m_RendererID);
-    #endif
 }
 
 OpenGLVertexArray::~OpenGLVertexArray()
 {
-    #ifndef __EMSCRIPTEN__
     glDeleteVertexArrays(1, &m_RendererID);
-    #endif
 }
 
 void OpenGLVertexArray::Bind()
 {
-    #ifndef __EMSCRIPTEN__
     glBindVertexArray(m_RendererID);
-    #endif
 }
 
 void OpenGLVertexArray::Unbind()
 {
-    #ifndef __EMSCRIPTEN__
     glBindVertexArray(0);
-    #endif
 }
 
 void OpenGLVertexArray::AddVertexBuffer(const std::shared_ptr<OpenGLVertexBuffer> &vertexBuffer)
 {
-    assert(vertexBuffer->GetLayout().GetElements().size());
+    // HZ_CORE_ASSERT(vertexBuffer->GetLayout().GetElements().size(), "Vertex Buffer has no layout!");
 
-    #ifndef __EMSCRIPTEN__
     glBindVertexArray(m_RendererID);
-    #endif
     vertexBuffer->Bind();
 
     uint32_t index = 0;
@@ -147,9 +136,7 @@ void OpenGLVertexArray::AddVertexBuffer(const std::shared_ptr<OpenGLVertexBuffer
 
 void OpenGLVertexArray::SetIndexBuffer(const std::shared_ptr<OpenGLIndexBuffer> &indexBuffer)
 {
-    #ifndef __EMSCRIPTEN__
     glBindVertexArray(m_RendererID);
-    #endif
     indexBuffer->Bind();
 
     m_IndexBuffer = indexBuffer;

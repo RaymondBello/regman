@@ -6,6 +6,7 @@ EXE = regman
 
 SOURCE_DIR = src
 OPENGL_SRC = $(SOURCE_DIR)/OpenGL
+SCENE_SRC = $(SOURCE_DIR)/Scene
 
 ASSETS_DIR = assets
 
@@ -20,8 +21,12 @@ $(shell mkdir -p $(BUILD_DIR))
 
 # Source Files
 SOURCES = $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp
+# OpenGL API
 SOURCES += $(OPENGL_SRC)/opengl_buffer.cpp
 SOURCES += $(OPENGL_SRC)/opengl_shader.cpp
+# Scene Sources
+SOURCES += $(SCENE_SRC)/camera.cpp 
+SOURCES += $(SCENE_SRC)/entity.cpp $(SCENE_SRC)/scene.cpp
 # ImGui Files
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
@@ -39,7 +44,7 @@ CXXFLAGS += `pkg-config --cflags entt`
 CXXFLAGS += `pkg-config --cflags assimp`
 
 # Source Includes
-CXXFLAGS += -I$(OPENGL_SRC)
+CXXFLAGS += -I$(OPENGL_SRC) -I$(SCENE_SRC)
 
 LIBS = `pkg-config --libs assimp`
 
@@ -75,6 +80,9 @@ $(BUILD_DIR)/%.o: $(SOURCE_DIR)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/%.o: $(OPENGL_SRC)/%.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+$(BUILD_DIR)/%.o: $(SCENE_SRC)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 $(BUILD_DIR)/%.o: $(IMGUI_DIR)/%.cpp

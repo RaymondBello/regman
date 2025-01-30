@@ -3,18 +3,18 @@
 
 #include "utils.h"
 
+#include <memory>
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 #include <imgui_impl_opengl3.h>
 
-#if defined(IMGUI_IMPL_OPENGL_ES2)
+#ifdef __EMSCRIPTEN__
 #include <SDL_opengles2.h>
-#else
-#define GL_GLEXT_PROTOTYPES
-#include <SDL_opengl.h>
 #endif
 
-#include <memory>
+#define GL_GLEXT_PROTOTYPES
+#include <SDL_opengl.h>
+
 
 class OpenGLVertexBuffer
 {
@@ -25,8 +25,8 @@ public:
     void Bind();
     void Unbind();
 
-    const BufferLayout &GetLayout() const { return m_Layout; }
-    void SetLayout(const BufferLayout &layout) { m_Layout = layout; }
+    BufferLayout &GetLayout()  { return m_Layout; }
+    void SetLayout( BufferLayout &layout) { m_Layout = layout; }
 
 private:
     uint32_t m_RendererID;
@@ -42,7 +42,7 @@ public:
     void Bind();
     void Unbind();
 
-    uint32_t GetCount() const { return m_Count; }
+    uint32_t GetCount() { return m_Count; }
 
 private:
     uint32_t m_RendererID;
