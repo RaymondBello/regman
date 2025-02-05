@@ -27,6 +27,7 @@
     "format": "cpp",
     "span": "cpp",
     "__bit_reference": "cpp",
-    "*.inc": "cpp"
+    "*.inc": "cpp",
+    "__node_handle": "cpp"
   }
 }

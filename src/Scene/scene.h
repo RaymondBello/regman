@@ -7,6 +7,7 @@
 
 #include "utils.h"
 #include "components.h"
+#include "editor.h"
 
 class Entity;
 
@@ -17,6 +18,7 @@ public:
     ~Scene();
 
     void BeginScene();
+    void BeginEditor();
     void RenderScene(float width, float height);
     void EndScene();
 
@@ -27,77 +29,68 @@ public:
     // TEMP
     entt::registry &Reg() { return m_Registry; }
 
-    // GLfloat cubeVertices[144] = {
-    //     // front
-    //     -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, // 0 (red)
-    //     0.5f, -0.5f, -0.5f, 1.0f, 0.5f, 0.0f,  // 1 (orange)
-    //     0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f,   // 2 (yellow)
-    //     -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // 3 (green)
+    GLfloat cubeVertices[144] = {
+        // Front face
+        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, // Bottom-left
+        0.5f, -0.5f, -0.5f, 1.0f, 0.5f, 0.0f,  // Bottom-right
+        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f,   // Top-right
+        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // Top-left
 
-    //     // top
-    //     -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // 4 (blue)
-    //     0.5f, 0.5f, -0.5f, 0.5f, 0.0f, 1.0f,  // 5 (indigo)
-    //     0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,   // 6 (violet)
-    //     -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,  // 7 (gray)
+        // Back face
+        -0.5f, -0.5f, 0.5f, 0.0f, 0.5f, 1.0f, // Bottom-left
+        0.5f, -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,  // Bottom-right
+        0.5f, 0.5f, 0.5f, 0.0f, 0.5f, 0.0f,   // Top-right
+        -0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.5f,  // Top-left
 
-    //     // left
-    //     -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f, // 8 (cyan)
-    //     -0.5f, 0.5f, -0.5f, 1.0f, 0.5f, 0.5f,  // 9 (pink)
-    //     -0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 0.5f,   // 10 (light green)
-    //     -0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 1.0f,  // 11 (light blue)
+        // Left face
+        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 1.0f, // Bottom-left
+        -0.5f, 0.5f, -0.5f, 1.0f, 0.5f, 0.5f,  // Top-left
+        -0.5f, 0.5f, 0.5f, 0.5f, 1.0f, 0.5f,   // Top-right
+        -0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 1.0f,  // Bottom-right
 
-    //     // right
-    //     0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.5f, // 12 (dark pink)
-    //     0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.5f,  // 13 (light yellow)
-    //     0.5f, 0.5f, 0.5f, 0.5f, 0.0f, 1.0f,   // 14 (dark purple)
-    //     0.5f, -0.5f, 0.5f, 1.0f, 0.5f, 0.0f,  // 15 (orange yellow)
+        // Right face
+        0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.5f, // Bottom-left
+        0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.5f,  // Top-left
+        0.5f, 0.5f, 0.5f, 0.5f, 0.0f, 1.0f,   // Top-right
+        0.5f, -0.5f, 0.5f, 1.0f, 0.5f, 0.0f,  // Bottom-right
 
-    //     // back
-    //     -0.5f, -0.5f, 0.5f, 0.0f, 0.5f, 1.0f, // 16 (light blue)
-    //     0.5f, -0.5f, 0.5f, 0.5f, 1.0f, 0.0f,  // 17 (yellow green)
-    //     0.5f, 0.5f, 0.5f, 0.0f, 0.5f, 0.0f,   // 18 (dark green)
-    //     -0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 0.5f,  // 19 (dark pink)
+        // Top face
+        -0.5f, 0.5f, -0.5f, 0.0f, 0.0f, 1.0f, // Bottom-left
+        0.5f, 0.5f, -0.5f, 0.5f, 0.0f, 1.0f,  // Bottom-right
+        0.5f, 0.5f, 0.5f, 1.0f, 0.0f, 1.0f,   // Top-right
+        -0.5f, 0.5f, 0.5f, 0.5f, 0.5f, 0.5f,  // Top-left
 
-    //     // bottom
-    //     -0.5f, -0.5f, 0.5f, 0.3f, 0.3f, 0.3f, // 20
-    //     0.5f, -0.5f, 0.5f, 0.3f, 0.3f, 0.3f,  // 21
-    //     0.5f, -0.5f, -0.5f, 0.3f, 0.3f, 0.3f, // 22
-    //     -0.5f, -0.5f, -0.5f, 0.3f, 0.3f, 0.3f // 23
-    // };
+        // Bottom face (now with proper colors)
+        -0.5f, -0.5f, -0.5f, 0.8f, 0.8f, 0.8f, // Bottom-left
+        0.5f, -0.5f, -0.5f, 0.7f, 0.7f, 0.7f,  // Bottom-right
+        0.5f, -0.5f, 0.5f, 0.6f, 0.6f, 0.6f,   // Top-right
+        -0.5f, -0.5f, 0.5f, 0.5f, 0.5f, 0.5f   // Top-left
+    };
 
-    // GLuint cubeIndices[36] = {
-    //     // front
-    //     0, 1, 2, // first triangle
-    //     2, 3, 0, // second triangle
+    GLuint cubeIndices[36] = {
+        // front
+        0, 1, 2,
+        2, 3, 0,
 
-    //     // top
-    //     4, 5, 6, // first triangle
-    //     6, 7, 4, // second triangle
+        // top
+        4, 5, 6,
+        6, 7, 4,
 
-    //     // left
-    //     8, 9, 10,  // first triangle
-    //     10, 11, 8, // second triangle
+        // left
+        8, 9, 10,
+        10, 11, 8,
 
-    //     // right
-    //     14, 13, 12, // 12, 13, 14, // first triangle
-    //     12, 15, 14, // 14, 15, 12, // second triangle
+        // right (FIXED winding order)
+        12, 13, 14,
+        14, 15, 12,
 
-    //     // back
-    //     18, 17, 16, // 16, 17, 18, // first triangle
-    //     16, 19, 18, // 18, 19, 16, // second triangle
+        // back (FIXED winding order)
+        16, 17, 18,
+        18, 19, 16,
 
-    //     // bottom
-    //     20, 21, 22, // first triangle
-    //     22, 23, 20  // second triangle
-    // };
-    // GLuint cubeIndices[36] = {
-    //     0, 1, 2, 2, 3, 0,       // Front
-    //     4, 5, 6, 6, 7, 4,       // Top
-    //     8, 9, 10, 10, 11, 8,    // Left
-    //     12, 13, 14, 14, 15, 12, // Right
-    //     16, 17, 18, 18, 19, 16, // Back
-    //     20, 21, 22, 22, 23, 20  // Bottom
-    // };
+        // bottom
+        20, 21, 22,
+        22, 23, 20};
 
     // Plane indices
     GLfloat planeVertices[24] = {
@@ -110,22 +103,47 @@ public:
 
     GLuint planeIndices[6] = {0, 1, 2, 2, 3, 0};
 
-    GLfloat cubeVertices[30] = {
-    // Apex (Top point) - White
-     0.0f,  0.5f,  0.0f,  1.0f, 1.0f, 1.0f, 
-    // Base (Square at y = -0.5f)
-    // Bottom-left - Red
-    -0.5f, -0.5f, -0.5f,  1.0f, 0.0f, 0.0f,  
-    // Bottom-right - Green
-     0.5f, -0.5f, -0.5f,  0.0f, 1.0f, 0.0f,  
-    // Top-right - Blue
-     0.5f, -0.5f,  0.5f,  0.0f, 0.0f, 1.0f,  
-    // Top-left - Yellow
-    -0.5f, -0.5f,  0.5f,  1.0f, 1.0f, 0.0f,  
+    GLfloat pyramidVertices[30] = {
+        // Apex (Top point) - White
+        0.0f,
+        0.5f,
+        0.0f,
+        1.0f,
+        1.0f,
+        1.0f,
+        // Base (Square at y = -0.5f)
+        // Bottom-left - Red
+        -0.5f,
+        -0.5f,
+        -0.5f,
+        1.0f,
+        0.0f,
+        0.0f,
+        // Bottom-right - Green
+        0.5f,
+        -0.5f,
+        -0.5f,
+        0.0f,
+        1.0f,
+        0.0f,
+        // Top-right - Blue
+        0.5f,
+        -0.5f,
+        0.5f,
+        0.0f,
+        0.0f,
+        1.0f,
+        // Top-left - Yellow
+        -0.5f,
+        -0.5f,
+        0.5f,
+        1.0f,
+        1.0f,
+        0.0f,
     };
 
     // Indices for drawing triangles
-    GLuint cubeIndices[18] = {
+    GLuint pyramidIndices[18] = {
         // Front Face
         0, 1, 2,
         // Right Face
@@ -139,6 +157,8 @@ public:
         1, 3, 4};
     // Camera
     Camera m_ActiveCamera;
+    TextEditor editor;
+    char *fileToEdit = "assets/scripts/controller.lua";
 
 private:
     entt::registry m_Registry;

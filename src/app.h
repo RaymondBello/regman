@@ -51,11 +51,12 @@ struct AppSettings {
     float font_size  = 17.0f;
 
     // Window settings
-    bool show_demo_window        = true;  // Imgui Demo
-    bool show_plot_demo_window   = true;  // Implot Demo
-    bool show_terminal_window    = true;
-    bool show_scene_graph_window = true;
-    bool show_inspector_window   = true;
+    bool show_demo_window        = false;  // Imgui Demo
+    bool show_plot_demo_window   = false;  // Implot Demo
+    bool show_terminal_window    = false;
+    bool show_scene_graph_window = false;
+    bool show_inspector_window   = false;
+    bool show_editor_window      = false;
 };
 
 
@@ -99,6 +100,7 @@ public:
     void createMenubar();
     void createSceneGraph();
     void createInspector();
+    void createEditor();
     void createViewport();
     void createProfiler();
     // Render Utility Functions

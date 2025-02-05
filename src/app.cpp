@@ -109,6 +109,7 @@ int App::initializeUI() {
     m_SelectedEntityId = -1;
     m_Scene = std::make_shared<Scene>();
     m_Scene->BeginScene();
+    m_Scene->BeginEditor();
 
     return 0;
 }
@@ -285,6 +286,7 @@ void App::createMenubar() {
             ImGui::MenuItem("Plot Demo Window", NULL, &settings.show_plot_demo_window);
             ImGui::MenuItem("Scene Graph", NULL, &settings.show_scene_graph_window);
             ImGui::MenuItem("Inspector", NULL, &settings.show_inspector_window);
+            ImGui::MenuItem("Text Editor", NULL, &settings.show_editor_window);
 
             ImGui::EndMenu();
         }
@@ -493,16 +495,92 @@ void App::createInspector()
     ImGui::End();
 }
 
+void App::createEditor()
+{
+
+    if (m_Scene)
+    {
+        auto cpos = m_Scene->editor.GetCursorPosition();
+        ImGui::Begin("Text Editor Demo", nullptr, ImGuiWindowFlags_HorizontalScrollbar | ImGuiWindowFlags_MenuBar);
+        ImGui::SetWindowSize(ImVec2(800, 650), ImGuiCond_FirstUseEver);
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if (ImGui::MenuItem("Save"))
+                {
+                    auto textToSave = m_Scene->editor.GetText();
+                    printf("Info: File content: %s", textToSave.c_str());
+                    /// save text....
+                }
+                if (ImGui::MenuItem("Quit", "Alt-F4"))
+                    settings.show_editor_window = false;
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Edit"))
+            {
+                bool ro = m_Scene->editor.IsReadOnly();
+                if (ImGui::MenuItem("Read-only mode", nullptr, &ro))
+                    m_Scene->editor.SetReadOnly(ro);
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Undo", "ALT-Backspace", nullptr, !ro && m_Scene->editor.CanUndo()))
+                    m_Scene->editor.Undo();
+                if (ImGui::MenuItem("Redo", "Ctrl-Y", nullptr, !ro && m_Scene->editor.CanRedo()))
+                    m_Scene->editor.Redo();
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Copy", "Ctrl-C", nullptr, m_Scene->editor.HasSelection()))
+                    m_Scene->editor.Copy();
+                if (ImGui::MenuItem("Cut", "Ctrl-X", nullptr, !ro && m_Scene->editor.HasSelection()))
+                    m_Scene->editor.Cut();
+                if (ImGui::MenuItem("Delete", "Del", nullptr, !ro && m_Scene->editor.HasSelection()))
+                    m_Scene->editor.Delete();
+                if (ImGui::MenuItem("Paste", "Ctrl-V", nullptr, !ro && ImGui::GetClipboardText() != nullptr))
+                    m_Scene->editor.Paste();
+
+                ImGui::Separator();
+
+                if (ImGui::MenuItem("Select all", nullptr, nullptr))
+                    m_Scene->editor.SetSelection(TextEditor::Coordinates(), TextEditor::Coordinates(m_Scene->editor.GetTotalLines(), 0));
+
+                ImGui::EndMenu();
+            }
+
+            if (ImGui::BeginMenu("View"))
+            {
+                if (ImGui::MenuItem("Dark palette"))
+                    m_Scene->editor.SetPalette(TextEditor::GetDarkPalette());
+                if (ImGui::MenuItem("Light palette"))
+                    m_Scene->editor.SetPalette(TextEditor::GetLightPalette());
+                if (ImGui::MenuItem("Retro blue palette"))
+                    m_Scene->editor.SetPalette(TextEditor::GetRetroBluePalette());
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+
+        ImGui::Text("%6d/%-6d %6d lines  | %s | %s | %s | %s", cpos.mLine + 1, cpos.mColumn + 1, m_Scene->editor.GetTotalLines(),
+                    m_Scene->editor.IsOverwrite() ? "Ovr" : "Ins",
+                    m_Scene->editor.CanUndo() ? "*" : " ",
+                    m_Scene->editor.GetLanguageDefinition().mName.c_str(), m_Scene->fileToEdit);
+        m_Scene->editor.Render("Text Editor");
+
+        ImGui::End();
+    }
+}
+
 void App::drawUI() {
 
     createMenubar();
 
-    if (settings.show_demo_window) {
+    if (settings.show_demo_window)
         ImGui::ShowDemoWindow(&settings.show_demo_window);
-    }
-    if (settings.show_plot_demo_window) {
+
+    if (settings.show_plot_demo_window)
         ImPlot::ShowDemoWindow(&settings.show_plot_demo_window);
-    }
+
     if (settings.show_terminal_window) {
         ImGuiIO& io = ImGui::GetIO(); (void)io;
         ImGui::Begin("Terminal");
@@ -518,17 +596,17 @@ void App::drawUI() {
         if (ImGui::Button("Send")) {
             printf("Command: %s\n", buf1);
         }
-
         ImGui::End();
     }
+
     if (settings.show_scene_graph_window)
-    {
         createSceneGraph();
-    }
+
     if (settings.show_inspector_window)
-    {
         createInspector();
-    }
+
+    if (settings.show_editor_window)
+        createEditor();
 }
     
 void App::renderLoop() {

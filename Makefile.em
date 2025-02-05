@@ -24,7 +24,7 @@ SOURCES =  $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp
 SOURCES += $(OPENGL_SRC)/opengl_buffer.cpp
 SOURCES += $(OPENGL_SRC)/opengl_shader.cpp
 # Scene Sources
-SOURCES += $(SCENE_SRC)/camera.cpp 
+SOURCES += $(SCENE_SRC)/camera.cpp $(SCENE_SRC)/editor.cpp
 SOURCES += $(SCENE_SRC)/entity.cpp $(SCENE_SRC)/scene.cpp
 # ImGui Files
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp

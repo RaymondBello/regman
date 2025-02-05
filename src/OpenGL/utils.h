@@ -23,6 +23,7 @@ enum class ObjectType
     MODEL,
     // Geometry
     CUBE,
+    PYRAMID,
     SPHERE,
     CUBE_MAP,
     // Simulation
@@ -36,6 +37,7 @@ const std::unordered_map<ObjectType, std::string> ObjectTypeStringMap = {
     {ObjectType::POINT_LIGHT, "Point Light"},
     {ObjectType::MODEL, "Model"},
     {ObjectType::CUBE, "Cube"},
+    {ObjectType::PYRAMID, "Pyramid"},
     {ObjectType::SPHERE, "Sphere"},
     {ObjectType::CUBE_MAP, "Cube Map"},
     {ObjectType::SIMULATION, "Simulation"}};
