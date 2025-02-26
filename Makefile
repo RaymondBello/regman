@@ -14,16 +14,18 @@ IMGUI_DIR  = lib/imgui
 IMPLOT_DIR = lib/implot
 GLM_DIR    = lib/glm
 ENTT_DIR   = lib/entt
+STB_DIR    = lib/stb
 SDL_DIR    = /remote/us01home59/bello/bin/bin
 
 # Create build directory if it doesn't exist
 $(shell mkdir -p $(BUILD_DIR))
 
 # Source Files
-SOURCES = $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp
+SOURCES = $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp $(SOURCE_DIR)/stb.cpp
 # OpenGL API
 SOURCES += $(OPENGL_SRC)/opengl_buffer.cpp
 SOURCES += $(OPENGL_SRC)/opengl_shader.cpp
+SOURCES += $(OPENGL_SRC)/opengl_texture.cpp
 # Scene Sources
 SOURCES += $(SCENE_SRC)/camera.cpp $(SCENE_SRC)/editor.cpp
 SOURCES += $(SCENE_SRC)/entity.cpp $(SCENE_SRC)/scene.cpp
@@ -32,6 +34,7 @@ SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_sdl2.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
 # ImPlot Files
 SOURCES += $(IMPLOT_DIR)/implot.cpp $(IMPLOT_DIR)/implot_items.cpp $(IMPLOT_DIR)/implot_demo.cpp
+
 OBJS = $(addprefix $(BUILD_DIR)/, $(notdir $(SOURCES:.cpp=.o)))
 UNAME_S = $(shell uname -s)
 
@@ -40,6 +43,7 @@ CXXFLAGS += -g -Wall -Wformat
 CXXFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(IMGUI_DIR)/examples/libs/emscripten
 CXXFLAGS += -I$(IMPLOT_DIR)
 CXXFLAGS += -I$(GLM_DIR)
+CXXFLAGS += -I$(STB_DIR)
 CXXFLAGS += `pkg-config --cflags entt`
 CXXFLAGS += `pkg-config --cflags assimp`
 

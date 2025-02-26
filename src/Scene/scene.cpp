@@ -65,9 +65,44 @@ Entity Scene::AddObject(ObjectType type)
             {ShaderDataType::Float3, "aPosition"},
             {ShaderDataType::Float3, "aColor"}};
         auto meshComponent = MeshComponent(shader, pyramidVertices, sizeof(pyramidVertices), pyramidIndices, sizeof(pyramidIndices), layout);
-
         newEntity.AddComponent<MeshComponent>(meshComponent);
 
+        break;
+    }
+    case ObjectType::TEX_PYRAMID:
+    {
+        newEntity = CreateEntity("New Textured Pyramid");
+        auto shader = Shader{
+            "Texture Shader",
+            new OpenGLShader(vShdrSrc(texture), fShdrSrc(texture))};
+        auto texture = Texture{
+            "Wood Texture",
+            new OpenGLTexture("assets/textures/wood.png", 0)};
+        BufferLayout layout = {
+            {ShaderDataType::Float3, "aPosition"},
+            {ShaderDataType::Float3, "aColor"},
+            {ShaderDataType::Float2, "aTex"}};
+        auto meshComponent = MeshComponent(shader, texPyramidVertices, sizeof(texPyramidVertices), texPyramidIndices, sizeof(texPyramidIndices), layout);
+        meshComponent.addTexture(texture);
+        newEntity.AddComponent<MeshComponent>(meshComponent);
+        break;
+    }
+    case ObjectType::QUAD:
+    {
+        newEntity = CreateEntity("New Quad");
+        auto shader = Shader{
+            "Texture Shader",
+            new OpenGLShader(vShdrSrc(texture), fShdrSrc(texture))};
+        auto texture = Texture{
+            "Wood Texture",
+            new OpenGLTexture("assets/textures/wood.png", 0)};
+        BufferLayout layout = {
+            {ShaderDataType::Float3, "aPosition"},
+            {ShaderDataType::Float3, "aColor"},
+            {ShaderDataType::Float2, "aTex"}};
+        auto meshComponent = MeshComponent(shader, quadVertices, sizeof(quadVertices), quadIndices, sizeof(quadIndices), layout);
+        meshComponent.addTexture(texture);
+        newEntity.AddComponent<MeshComponent>(meshComponent);
         break;
     }
 
@@ -82,24 +117,37 @@ Entity Scene::AddObject(ObjectType type)
 void Scene::BeginScene()
 {
     glm::vec3 start_point = {0.0f, 0.0f, -1.7f};
-    glm::vec3 spacing = {0.0f, 0.1f, 0.0f};
+    glm::vec3 start_point2 = {-1.5f, 0.0f, -1.7f};
+    glm::vec3 start_point3 = {1.5f, 0.0f, -1.7f};
 
-    // Create entities
-    // auto cubeEntity = AddObject(ObjectType::CUBE);
-    // cubeEntity.GetComponent<TransformComponent>().position = start_point;
+    // int widthImg, heightImg, numColCh;
+    // unsigned char *bytes = stbi_load("assets/textures/wood.png", &widthImg, &heightImg, &numColCh, 0);
 
-    auto pyramidEntity = AddObject(ObjectType::PYRAMID);
-    pyramidEntity.GetComponent<TransformComponent>().position = start_point + spacing;
+    // GLuint texture;
+    // glGenTextures(1, &texture);
+    // glActiveTexture(GL_TEXTURE0);
+    // glBindTexture(GL_TEXTURE_2D, texture);
+
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    // glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+    // glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, widthImg, heightImg, 0, GL_RGBA, GL_UNSIGNED_BYTE, bytes);
+    // glGenerateMipmap(GL_TEXTURE_2D);
+    // stbi_image_free(bytes);
+    // glBindTexture(GL_TEXTURE_2D, 0);
 
     // Create the plane
-    // auto planeEntity = CreateEntity("Plane");
-    // auto planeshader = Shader{
-    //     "Default Shader",
-    //     new OpenGLShader(vShdrSrc(default), fShdrSrc(default))};
-    // BufferLayout planeLayout = {
-    //     {ShaderDataType::Float3, "a_Position"},
-    //     {ShaderDataType::Float3, "a_Color"}};
-    // auto planeMeshComponent = MeshComponent(planeshader, planeVertices, sizeof(planeVertices), planeIndices, sizeof(planeIndices), planeLayout);
+    auto quadEntity = AddObject(ObjectType::QUAD);
+    quadEntity.GetComponent<TransformComponent>().position = start_point2;
+
+    auto cubeEntity = AddObject(ObjectType::CUBE);
+    cubeEntity.GetComponent<TransformComponent>().position = start_point3;
+
+    // auto pyramidEntity = AddObject(ObjectType::PYRAMID);
+    // pyramidEntity.GetComponent<TransformComponent>().position = start_point;
 
     auto cameraEntity = CreateRawEntity("Scene Camera");
     auto &camera = cameraEntity.AddComponent<CameraComponent>(16.0f, 9.0f);
@@ -246,12 +294,12 @@ void Scene::RenderScene(float width, float height)
             mesh.vao->Bind();
 
             // Setup Face culling and depth testing
-            glEnable(GL_DEPTH_TEST);
+            // glEnable(GL_DEPTH_TEST);
             // glDepthFunc(GL_LESS);
             // glDisable(GL_CULL_FACE);
 
-            glEnable(GL_CULL_FACE);
-            glCullFace(GL_BACK);
+            // glEnable(GL_CULL_FACE);
+            // glCullFace(GL_BACK);
 
             glDrawElements(GL_TRIANGLES, mesh.vao->GetIndexBuffer()->GetCount(), GL_UNSIGNED_INT, 0);
 

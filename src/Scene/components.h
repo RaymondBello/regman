@@ -6,6 +6,7 @@
 
 #include "opengl_buffer.h"
 #include "opengl_shader.h"
+#include "opengl_texture.h"
 #include "camera.h"
 
 struct TagComponent
@@ -66,6 +67,12 @@ struct Shader
     OpenGLShader *instance = nullptr;
 };
 
+struct Texture
+{
+    std::string name;
+    OpenGLTexture *instance = nullptr;
+};
+
 struct Mesh
 {
     std::vector<GLuint> indices;
@@ -92,13 +99,23 @@ struct MeshComponent
         {
             // Bind the shader and initialize the uniforms
             shader.instance->Bind();
-            shader.instance->UploadUniformMat4("u_ModelMatrix", glm::mat4(1.0f));
+            shader.instance->UploadUniformMat4("uModelMatrix", glm::mat4(1.0f));
             shader.instance->Unbind();
         }
     };
 
+    void addTexture(Texture tex)
+    {
+        texture = tex;
+        hasTexture = true;
+    }
+
     Shader shader;
+    Texture texture;
+
     BufferLayout layout;
+
+    bool hasTexture = false;
 
     std::shared_ptr<Mesh> mesh;
     std::shared_ptr<OpenGLVertexArray> vao;

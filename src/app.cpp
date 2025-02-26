@@ -104,6 +104,7 @@ int App::initializeUI() {
     ImGui_ImplOpenGL3_Init(glsl_version);
 
     printf("Info: GLSL Version: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+    glEnable(GL_DEPTH_TEST);
 
     // Create a scene
     m_SelectedEntityId = -1;
@@ -146,7 +147,7 @@ void App::endRender() {
 
     glClearColor(window_bg_color.x * window_bg_color.w, window_bg_color.y * window_bg_color.w, window_bg_color.z * window_bg_color.w, window_bg_color.w);
     
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     ////////////// RENDER START //////////////
 
@@ -196,6 +197,13 @@ void App::endRender() {
                     // projectionMatrix = glm::mat4(1.0f);
                     mesh.shader.instance->UploadUniformMat4("uProjectionMatrix", projectionMatrix);
 
+                    // Check if mesh has a texture
+                    if (mesh.hasTexture) {
+                        int slot = mesh.texture.instance->m_TexSlot;
+                        mesh.shader.instance->UploadUniformInt("tex0", slot);
+                        mesh.texture.instance->Bind();
+                    }
+
                     // Bind the VAO for this mesh
                     mesh.vao->Bind();
 
@@ -211,6 +219,9 @@ void App::endRender() {
                     // glDisable(GL_DEPTH_TEST);
 
                     mesh.vao->Unbind();
+                    mesh.shader.instance->Unbind();
+                    if (mesh.hasTexture)
+                        mesh.texture.instance->UnBind();
                 }
             }
         }
@@ -290,6 +301,9 @@ void App::createMenubar() {
 
             ImGui::EndMenu();
         }
+        ImGuiIO& io = ImGui::GetIO(); (void)io;
+        ImGui::Text("avg %.3f ms/frame %.1f fps", 1000.0f / io.Framerate, io.Framerate);
+
         ImGui::EndMainMenuBar();
     }
 }

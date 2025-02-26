@@ -15,14 +15,17 @@ IMGUI_DIR  = lib/imgui
 IMPLOT_DIR = lib/implot
 GLM_DIR    = lib/glm
 ENTT_DIR   = lib/entt
+STB_DIR    = lib/stb
+
 
 # Create build directory if it doesn't exist
 $(shell mkdir -p $(BUILD_DIR))
 
 # Source Files
-SOURCES =  $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp
+SOURCES =  $(SOURCE_DIR)/main.cpp $(SOURCE_DIR)/app.cpp $(SOURCE_DIR)/stb.cpp
 SOURCES += $(OPENGL_SRC)/opengl_buffer.cpp
 SOURCES += $(OPENGL_SRC)/opengl_shader.cpp
+SOURCES += $(OPENGL_SRC)/opengl_texture.cpp
 # Scene Sources
 SOURCES += $(SCENE_SRC)/camera.cpp $(SCENE_SRC)/editor.cpp
 SOURCES += $(SCENE_SRC)/entity.cpp $(SCENE_SRC)/scene.cpp
@@ -76,6 +79,7 @@ endif
 CPPFLAGS += -I$(IMGUI_DIR) -I$(IMGUI_DIR)/backends -I$(IMGUI_DIR)/examples/libs/emscripten
 CXXFLAGS += -I$(IMPLOT_DIR)
 CXXFLAGS += -I$(GLM_DIR)
+CXXFLAGS += -I$(STB_DIR)
 CXXFLAGS += -I$(OPENGL_SRC) -I$(SCENE_SRC)
 CXXFLAGS += `pkg-config --cflags entt`
 CXXFLAGS += `pkg-config --cflags assimp`

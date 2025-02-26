@@ -28,6 +28,7 @@
     "span": "cpp",
     "__bit_reference": "cpp",
     "*.inc": "cpp",
-    "__node_handle": "cpp"
+    "__node_handle": "cpp",
+    "stdexcept": "cpp"
   }
 }

@@ -92,16 +92,15 @@ public:
         20, 21, 22,
         22, 23, 20};
 
-    // Plane indices
-    GLfloat planeVertices[24] = {
-        // front
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, // 0 (red)
-        0.5f, -0.5f, -0.5f, 1.0f, 0.5f, 0.0f,  // 1 (orange)
-        0.5f, 0.5f, -0.5f, 1.0f, 1.0f, 0.0f,   // 2 (yellow)
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f,  // 3 (green)
+    // Quad indices
+    GLfloat quadVertices[32] = {
+        -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, // 0 (red)
+        -0.5f, 0.5f, 0.0f, 1.0f, 0.5f, 0.0f, 0.0f, 1.0f,  // 1 (orange)
+        0.5f, 0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f,   // 2 (yellow)
+        0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f,  // 3 (green)
     };
 
-    GLuint planeIndices[6] = {0, 1, 2, 2, 3, 0};
+    GLuint quadIndices[6] = {0, 2, 1, 0, 3, 2};
 
     GLfloat pyramidVertices[30] = {
         // Apex (Top point) - White
@@ -155,6 +154,24 @@ public:
         // Base (Two Triangles)
         1, 2, 3,
         1, 3, 4};
+
+    GLfloat texPyramidVertices[40] =
+        { //     COORDINATES     /        COLORS      /   TexCoord  //
+            -0.5f, 0.0f, 0.5f, 0.83f, 0.70f, 0.44f, 0.0f, 0.0f,
+            -0.5f, 0.0f, -0.5f, 0.83f, 0.70f, 0.44f, 5.0f, 0.0f,
+            0.5f, 0.0f, -0.5f, 0.83f, 0.70f, 0.44f, 0.0f, 0.0f,
+            0.5f, 0.0f, 0.5f, 0.83f, 0.70f, 0.44f, 5.0f, 0.0f,
+            0.0f, 0.8f, 0.0f, 0.92f, 0.86f, 0.76f, 2.5f, 5.0f};
+
+    // Indices for vertices order
+    GLuint texPyramidIndices[18] =
+        {
+            0, 1, 2,
+            0, 2, 3,
+            0, 1, 4,
+            1, 2, 4,
+            2, 3, 4,
+            3, 0, 4};
     // Camera
     Camera m_ActiveCamera;
     TextEditor editor;

@@ -24,8 +24,10 @@ enum class ObjectType
     // Geometry
     CUBE,
     PYRAMID,
+    TEX_PYRAMID,
     SPHERE,
     CUBE_MAP,
+    QUAD,
     // Simulation
     SIMULATION
 };
@@ -38,8 +40,10 @@ const std::unordered_map<ObjectType, std::string> ObjectTypeStringMap = {
     {ObjectType::MODEL, "Model"},
     {ObjectType::CUBE, "Cube"},
     {ObjectType::PYRAMID, "Pyramid"},
+    {ObjectType::TEX_PYRAMID, "Textured Pyramid"},
     {ObjectType::SPHERE, "Sphere"},
     {ObjectType::CUBE_MAP, "Cube Map"},
+    {ObjectType::QUAD, "Quad"},
     {ObjectType::SIMULATION, "Simulation"}};
 
 enum class ShaderDataType

@@ -39,6 +39,7 @@
 #include "emscripten_mainloop_stub.h"
 #endif
 
+
 #include "components.h"
 #include "scene.h"
 #include "entity.h"
